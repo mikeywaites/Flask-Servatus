@@ -14,7 +14,7 @@ License
 -------
 
 Flask-Servatus is distributed under the `BSD license`
-<http://www.opensource.org/licenses/bsd-license.php>`_.
+<http://opensource.org/licenses/BSD-3-Clause>`_.
 
 Contributors
 -------
