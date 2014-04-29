@@ -141,21 +141,22 @@ class FileSystemStorage(Storage):
 
         self.base_url = base_url
         if base_url is None:
-            self.base_url = current_app.config['DEPOT_MEDIA_URL']
+            self.base_url = current_app.config['SERVATUS_MEDIA_URL']
 
         self.location = location
         if location is None:
+            #TODO
             #self.location = current_app.config['DEPOT_MEDIA_ROOT']
             self.location = '/home/vagrant/www/uploads/'
 
         self.file_permissions_mode = (
             file_permissions_mode if file_permissions_mode is not None
-            else current_app.config['DEPOT_FILE_UPLOAD_PERMISSIONS']
+            else current_app.config['SERVATUS_FILE_UPLOAD_PERMISSIONS']
         )
 
         self.directory_permissions_mode = (
             directory_permissions_mode if directory_permissions_mode is not None
-            else current_app.config['DEPOT_UPLOAD_DIR_PERMISSIONS']
+            else current_app.config['SERVATUS_UPLOAD_DIR_PERMISSIONS']
         )
 
     def path(self, name):
