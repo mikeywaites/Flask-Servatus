@@ -266,3 +266,6 @@ class FileSystemStorage(Storage):
         if self.base_url is None:
             raise ValueError("This file is not accessible via a URL.")
         return urljoin(self.base_url, filepath_to_uri(name))
+
+    def size(self, name):
+        return os.path.getsize(self.path(name))

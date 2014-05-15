@@ -75,6 +75,24 @@ class FieldTypeTests(unittest.TestCase):
 
         self.assertTrue(exists(model.image.path))
 
+    def test_url_set(self):
+        model = self.Model()
+        model.image = ContentFile('foo', name='foo.txt')
+        self.db.session.add(model)
+
+        self.db.session.commit()
+
+        self.assertEquals(model.image.url, '/media/foo.txt')
+
+    def test_size_set(self):
+        model = self.Model()
+        model.image = ContentFile('foo', name='foo.txt')
+        self.db.session.add(model)
+
+        self.db.session.commit()
+
+        self.assertEquals(model.image.size, 3)
+
     def test_model_with_existing_file_stored(self):
         model = self.Model()
         model.image = ContentFile('foo', name='foo.txt')

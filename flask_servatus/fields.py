@@ -22,17 +22,6 @@ class FieldFile(ServatusFile):
     def __init__(self, storage, name):
         super(FieldFile, self).__init__(None, name=name)
         self.storage = storage
-        self._committed = True
-
-    def __eq__(self, other):
-        # Older code may be expecting FileField values to be simple strings.
-        # By overriding the == operator, it can remain backwards compatibility.
-        if hasattr(other, 'name'):
-            return self.name == other.name
-        return self.name == other
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def __hash__(self):
         return hash(self.name)
@@ -71,8 +60,6 @@ class FieldFile(ServatusFile):
 
     def _get_size(self):
         self._require_file()
-        if not self._committed:
-            return self.file.size
         return self.storage.size(self.name)
     size = property(_get_size)
 
@@ -91,13 +78,6 @@ class FieldFile(ServatusFile):
         file = getattr(self, '_file', None)
         if file is not None:
             file.close()
-
-    def __getstate__(self):
-        # FieldFile needs access to its associated model field and an instance
-        # it's attached to in order to work properly, but the only necessary
-        # data to be pickled is the file's name itself. Everything else will
-        # be restored later, by FileDescriptor below.
-        return {'name': self.name, 'closed': False, '_committed': True, '_file': None}
 
 
 class File(types.TypeDecorator):
