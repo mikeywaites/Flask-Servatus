@@ -4,6 +4,8 @@
 import unittest
 import tempfile
 
+from os.path import dirname, join, exists
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
@@ -12,15 +14,19 @@ from sqlalchemy import Column, Integer
 
 from .. import Servatus
 from ..fields import File
+from ..files import ContentFile
+import shutil
 
 servatus = Servatus()
-db = SQLAlchemy()
+
+MEDIA_DIR = join(dirname(__file__), 'test_media')
 
 
-def factory():
+def factory(db):
 
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+    app.config['SERVATUS_MEDIA_ROOT'] = MEDIA_DIR
     servatus.init_app(app)
     db.init_app(app)
 
@@ -32,7 +38,7 @@ def get_model(db):
     class MyModel(db.Model):
         __tablename__ = 'my_model'
         id = Column(Integer, primary_key=True)
-        image = Column(File(storage=servatus.get_storage_class()))
+        image = Column(File(storage=servatus.get_default_storage()))
 
     return MyModel
 
@@ -40,29 +46,63 @@ def get_model(db):
 class FieldTypeTests(unittest.TestCase):
 
     def setUp(self):
+        self.db = SQLAlchemy()
         self.temp_dir = tempfile.mkdtemp()
-        self.app = factory()
-        self.db = db
+        self.app = factory(self.db)
         ctx = self.app.test_request_context()
         ctx.push()
-        db.create_all()
+        self.Model = get_model(self.db)
+        self.db.create_all()
 
     def tearDown(self):
-        db.drop_all()
+        self.db.drop_all()
+        if exists(MEDIA_DIR):
+            shutil.rmtree(MEDIA_DIR)
 
     def test_file_type_requires_servatus_file_type(self):
-
-        model = get_model(self.db)()
+        model = self.Model()
         model.image = 'foo'
-        db.session.add(model)
+        self.db.session.add(model)
         with self.assertRaises(StatementError):
-            db.session.commit()
+            self.db.session.commit()
 
     def test_add_new_file_saves_file_using_storage(self):
-        pass
+        model = self.Model()
+        model.image = ContentFile('foo', name='foo.txt')
+        self.db.session.add(model)
+
+        self.db.session.commit()
+
+        self.assertTrue(exists(model.image.path))
 
     def test_model_with_existing_file_stored(self):
-        pass
+        model = self.Model()
+        model.image = ContentFile('foo', name='foo.txt')
+        self.db.session.add(model)
+
+        self.db.session.commit()
+
+        self.db.session.add(model)
+
+        model.image = ContentFile('foo2', name='foo2.txt')
+
+        self.db.session.commit()
+
+        self.assertTrue(model.image.path.endswith('foo2.txt'))
 
     def test_delete_existing_file_from_model(self):
-        pass
+        model = self.Model()
+        model.image = ContentFile('foo', name='foo.txt')
+        self.db.session.add(model)
+
+        self.db.session.commit()
+
+        self.db.session.add(model)
+
+        model.image = None
+
+        self.db.session.commit()
+
+        self.assertIsNone(model.image)
+
+        # TODO: should delete the existing file but it does not atm

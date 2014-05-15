@@ -34,8 +34,12 @@ class Servatus(object):
 
         return get_storage_class(current_app.config['SERVATUS_STORAGE_CLASS'])
 
+    def get_default_storage(self):
 
-get_default_storage = LocalProxy(lambda: _get_servatus())
+        return self.get_storage_class()()
+
+
+get_default_storage = LocalProxy(lambda: _get_servatus().get_default_storage())
 
 
 def _get_servatus():

@@ -145,9 +145,7 @@ class FileSystemStorage(Storage):
 
         self.location = location
         if location is None:
-            #TODO
-            #self.location = current_app.config['DEPOT_MEDIA_ROOT']
-            self.location = '/home/vagrant/www/uploads/'
+            self.location = current_app.config['SERVATUS_MEDIA_ROOT']
 
         self.file_permissions_mode = (
             file_permissions_mode if file_permissions_mode is not None

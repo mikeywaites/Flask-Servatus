@@ -18,6 +18,88 @@ from flask_servatus import get_default_storage
 from .files import ServatusFile
 
 
+class FieldFile(ServatusFile):
+    def __init__(self, storage, name):
+        super(FieldFile, self).__init__(None, name=name)
+        self.storage = storage
+        self._committed = True
+
+    def __eq__(self, other):
+        # Older code may be expecting FileField values to be simple strings.
+        # By overriding the == operator, it can remain backwards compatibility.
+        if hasattr(other, 'name'):
+            return self.name == other.name
+        return self.name == other
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.name)
+
+    # The standard File contains most of the necessary properties, but
+    # FieldFiles can be instantiated without a name, so that needs to
+    # be checked for here.
+
+    def _require_file(self):
+        if not self:
+            raise ValueError("The no file associated.")
+
+    def _get_file(self):
+        self._require_file()
+        if not hasattr(self, '_file') or self._file is None:
+            self._file = self.storage.open(self.name, 'rb')
+        return self._file
+
+    def _set_file(self, file):
+        self._file = file
+
+    def _del_file(self):
+        del self._file
+
+    file = property(_get_file, _set_file, _del_file)
+
+    def _get_path(self):
+        self._require_file()
+        return self.storage.path(self.name)
+    path = property(_get_path)
+
+    def _get_url(self):
+        self._require_file()
+        return self.storage.url(self.name)
+    url = property(_get_url)
+
+    def _get_size(self):
+        self._require_file()
+        if not self._committed:
+            return self.file.size
+        return self.storage.size(self.name)
+    size = property(_get_size)
+
+    def open(self, mode='rb'):
+        self._require_file()
+        self.file.open(mode)
+    # open() doesn't alter the file's contents, but it does reset the pointer
+    open.alters_data = True
+
+    def _get_closed(self):
+        file = getattr(self, '_file', None)
+        return file is None or file.closed
+    closed = property(_get_closed)
+
+    def close(self):
+        file = getattr(self, '_file', None)
+        if file is not None:
+            file.close()
+
+    def __getstate__(self):
+        # FieldFile needs access to its associated model field and an instance
+        # it's attached to in order to work properly, but the only necessary
+        # data to be pickled is the file's name itself. Everything else will
+        # be restored later, by FileDescriptor below.
+        return {'name': self.name, 'closed': False, '_committed': True, '_file': None}
+
+
 class File(types.TypeDecorator):
     """File :class:`sqlalchemy.types.Type` that supports the use of `storage
     backends`
@@ -39,11 +121,14 @@ class File(types.TypeDecorator):
         :raises: TypeError
         :returns: the file name of the saved file
         """
+        if not file:
+            return
+
         if not isinstance(file, ServatusFile):
             raise TypeError('FileType requires a ServatusFile'
                             ' instance or subclass')
 
-        return self.storage().save(file.name, file)
+        return self.storage.save(file.name, file)
 
     def process_bind_param(self, file, dialect):
 
@@ -54,5 +139,6 @@ class File(types.TypeDecorator):
 
         """
         if value is not None:
-            return self.storage().url(value)
+            return FieldFile(self.storage, value)
+            # return self.storage().url(value)
         return value
