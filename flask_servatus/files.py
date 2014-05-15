@@ -192,3 +192,27 @@ class ServatusFile(FileProxyMixin):
 
     def close(self):
         self.file.close()
+
+
+class ContentFile(ServatusFile):
+    """
+    A File-like object that takes just raw content, rather than an actual file.
+    """
+    def __init__(self, content, name=None):
+        super(ContentFile, self).__init__(BytesIO(content), name=name)
+        self.size = len(content)
+
+    def __str__(self):
+        return 'Raw content'
+
+    def __bool__(self):
+        return True
+
+    def __nonzero__(self):
+        return type(self).__bool__(self)
+
+    def open(self, mode=None):
+        self.seek(0)
+
+    def close(self):
+        pass

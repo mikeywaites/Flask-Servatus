@@ -55,8 +55,8 @@ from flask import current_app, safe_join
 from werkzeug import secure_filename
 from werkzeug.exceptions import NotFound
 
-import locks
-from .exceptions import SuspiciousFileOperation
+from flask_servatus.exceptions import SuspiciousFileOperation
+from flask_servatus import locks
 
 
 def chunked_iterator(content, chunk_size=None):
