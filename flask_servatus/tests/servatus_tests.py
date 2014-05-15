@@ -11,6 +11,7 @@ servatus = Servatus()
 def factory():
 
     app = Flask(__name__)
+    app.config['SERVATUS_MEDIA_ROOT'] = 'media_dir'
     servatus.init_app(app)
 
     return app
@@ -30,6 +31,8 @@ class ServatusClassTests(unittest.TestCase):
 
         app = Flask(__name__)
         app.config['SERVATUS_STORAGE_CLASS'] = 'foo.storage.MyStorage'
+        app.config['SERVATUS_MEDIA_ROOT'] = 'media_dir'
+
         servatus.init_app(app)
 
         self.assertEqual(app.config['SERVATUS_STORAGE_CLASS'],
@@ -41,3 +44,12 @@ class ServatusClassTests(unittest.TestCase):
 
         with app.app_context():
             self.assertEqual(servatus.get_storage_class(), FileSystemStorage)
+
+    def test_media_root_required(self):
+
+        app = Flask(__name__)
+        app.config['SERVATUS_STORAGE_CLASS'] = 'foo.storage.MyStorage'
+
+        with self.assertRaises(AttributeError):
+            servatus.init_app(app)
+

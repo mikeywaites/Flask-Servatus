@@ -14,8 +14,12 @@ from sqlalchemy import Column, Integer
 
 from .. import Servatus
 from ..fields import File
-from ..files import ContentFile
 import shutil
+
+from cStringIO import StringIO
+
+from werkzeug.datastructures import FileStorage
+
 
 servatus = Servatus()
 
@@ -43,6 +47,10 @@ def get_model(db):
     return MyModel
 
 
+def _file(content, name):
+    return FileStorage(StringIO(content), filename=name)
+
+
 class FieldTypeTests(unittest.TestCase):
 
     def setUp(self):
@@ -68,7 +76,7 @@ class FieldTypeTests(unittest.TestCase):
 
     def test_add_new_file_saves_file_using_storage(self):
         model = self.Model()
-        model.image = ContentFile('foo', name='foo.txt')
+        model.image = _file('foo', name='foo.txt')
         self.db.session.add(model)
 
         self.db.session.commit()
@@ -77,7 +85,7 @@ class FieldTypeTests(unittest.TestCase):
 
     def test_url_set(self):
         model = self.Model()
-        model.image = ContentFile('foo', name='foo.txt')
+        model.image = _file('foo', name='foo.txt')
         self.db.session.add(model)
 
         self.db.session.commit()
@@ -86,7 +94,7 @@ class FieldTypeTests(unittest.TestCase):
 
     def test_size_set(self):
         model = self.Model()
-        model.image = ContentFile('foo', name='foo.txt')
+        model.image = _file('foo', name='foo.txt')
         self.db.session.add(model)
 
         self.db.session.commit()
@@ -95,14 +103,14 @@ class FieldTypeTests(unittest.TestCase):
 
     def test_model_with_existing_file_stored(self):
         model = self.Model()
-        model.image = ContentFile('foo', name='foo.txt')
+        model.image = _file('foo', name='foo.txt')
         self.db.session.add(model)
 
         self.db.session.commit()
 
         self.db.session.add(model)
 
-        model.image = ContentFile('foo2', name='foo2.txt')
+        model.image = _file('foo2', name='foo2.txt')
 
         self.db.session.commit()
 
@@ -110,7 +118,7 @@ class FieldTypeTests(unittest.TestCase):
 
     def test_delete_existing_file_from_model(self):
         model = self.Model()
-        model.image = ContentFile('foo', name='foo.txt')
+        model.image = _file('foo', name='foo.txt')
         self.db.session.add(model)
 
         self.db.session.commit()
@@ -124,3 +132,4 @@ class FieldTypeTests(unittest.TestCase):
         self.assertIsNone(model.image)
 
         # TODO: should delete the existing file but it does not atm
+

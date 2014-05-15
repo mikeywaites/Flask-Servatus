@@ -89,8 +89,12 @@ class File(types.TypeDecorator):
     impl = types.Unicode
 
     def __init__(self, storage=None, *args, **kwargs):
-        self.storage = storage or get_default_storage()
+        self._storage = storage
         super(File, self).__init__(*args, **kwargs)
+
+    @property
+    def storage(self):
+        return self._storage or get_default_storage()
 
     def save(self, file):
         """save a file to the specified storage backend calling
@@ -104,15 +108,13 @@ class File(types.TypeDecorator):
         if not file:
             return
 
-        if not isinstance(file, ServatusFile):
-            raise TypeError('FileType requires a ServatusFile'
-                            ' instance or subclass')
+        servatus_file = ServatusFile.from_flask_filestorage(file)
 
-        return self.storage.save(file.name, file)
+        return self.storage.save(servatus_file.name, servatus_file)
 
     def process_bind_param(self, file, dialect):
-
-        return self.save(file)
+        result = self.save(file)
+        return result
 
     def process_result_value(self, value, dialect):
         """Return the fully qualified url for this `File`.

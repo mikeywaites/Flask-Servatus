@@ -18,7 +18,9 @@ class Servatus(object):
 
     def init_app(self, app):
 
-        app.config.setdefault('SERVATUS_MEDIA_ROOT', '')
+        if 'SERVATUS_MEDIA_ROOT' not in app.config:
+            raise AttributeError('must specify SERVATUS_MEDIA_ROOT in config')
+
         app.config.setdefault('SERVATUS_MEDIA_URL', '/media/')
         app.config.setdefault('SERVATUS_STORAGE_CLASS',
                               'flask_servatus.storages.FileSystemStorage')
@@ -39,7 +41,7 @@ class Servatus(object):
         return self.get_storage_class()()
 
 
-get_default_storage = LocalProxy(lambda: _get_servatus().get_default_storage())
+get_default_storage = LocalProxy(lambda: _get_servatus().get_default_storage)
 
 
 def _get_servatus():

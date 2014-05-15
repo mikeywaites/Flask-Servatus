@@ -193,26 +193,30 @@ class ServatusFile(FileProxyMixin):
     def close(self):
         self.file.close()
 
+    @classmethod
+    def from_flask_filestorage(cls, flask_filestorage):
+        return cls(flask_filestorage, name=flask_filestorage.filename)
 
-class ContentFile(ServatusFile):
-    """
-    A File-like object that takes just raw content, rather than an actual file.
-    """
-    def __init__(self, content, name=None):
-        super(ContentFile, self).__init__(BytesIO(content), name=name)
-        self.size = len(content)
 
-    def __str__(self):
-        return 'Raw content'
+# class ContentFile(ServatusFile):
+#     """
+#     A File-like object that takes just raw content, rather than an actual file.
+#     """
+#     def __init__(self, content, name=None):
+#         super(ContentFile, self).__init__(BytesIO(content), name=name)
+#         self.size = len(content)
 
-    def __bool__(self):
-        return True
+#     def __str__(self):
+#         return 'Raw content'
 
-    def __nonzero__(self):
-        return type(self).__bool__(self)
+#     def __bool__(self):
+#         return True
 
-    def open(self, mode=None):
-        self.seek(0)
+#     def __nonzero__(self):
+#         return type(self).__bool__(self)
 
-    def close(self):
-        pass
+#     def open(self, mode=None):
+#         self.seek(0)
+
+#     def close(self):
+#         pass

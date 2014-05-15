@@ -20,6 +20,7 @@ servatus = Servatus()
 def factory():
 
     app = Flask(__name__)
+    app.config['SERVATUS_MEDIA_ROOT'] = 'media_dir'
     servatus.init_app(app)
 
     return app
