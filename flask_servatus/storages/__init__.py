@@ -117,7 +117,7 @@ class Storage(object):
 
         :param name: name of file being saved
         """
-
+        name = str(name)
         dir_name, file_name = os.path.split(secure_filename(name))
         file_root, file_ext = os.path.splitext(file_name)
         # If the filename already exists, add an underscore and a number (before
