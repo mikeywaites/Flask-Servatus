@@ -269,3 +269,29 @@ class FileSystemStorage(Storage):
 
     def size(self, name):
         return os.path.getsize(self.path(name))
+
+
+class DummyStorage(Storage):
+    """
+    """
+
+    def path(self, name):
+        return name
+
+    def exists(self, name):
+        return False
+
+    def delete(self, name):
+        pass
+
+    def _open(self, name, mode='rb'):
+        return None
+
+    def _save(self, name, content):
+        return name
+
+    def url(self, name):
+        return name
+
+    def size(self, name):
+        return 0
