@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 
 from io import BytesIO, UnsupportedOperation
+from werkzeug.datastructures import FileStorage
 
 
 class FileProxyMixin(object):
@@ -197,6 +198,10 @@ class ServatusFile(FileProxyMixin):
     def from_flask_filestorage(cls, flask_filestorage):
         return cls(flask_filestorage, name=flask_filestorage.filename)
 
+
+class ContentFile(FileStorage):
+    def __init__(self, content, name):
+        return super(ContentFile, self).__init__(BytesIO(content), filename=name)
 
 # class ContentFile(ServatusFile):
 #     """
