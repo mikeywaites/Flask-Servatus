@@ -8,7 +8,6 @@ except ImportError:
 
 from flask_servatus.files import ServatusFile
 from flask_servatus.storages import Storage
-from django.core.exceptions import ImproperlyConfigured
 
 from flask_servatus.storages.amazon_s3 import AWSAuthConnection, QueryStringAuthGenerator, CallingFormat
 
@@ -54,7 +53,7 @@ class S3Storage(Storage):
             try:
                 import ezPyCrypto
             except ImportError:
-                raise ImproperlyConfigured("Could not load ezPyCrypto.\nSee "
+                raise AttributeError("Could not load ezPyCrypto.\nSee "
                     "http://www.freenet.org.nz/ezPyCrypto/ to install it.")
             self.crypto_key = ezPyCrypto.key
 
