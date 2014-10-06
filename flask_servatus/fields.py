@@ -114,7 +114,7 @@ class File(types.TypeDecorator):
 
     def process_bind_param(self, file, dialect):
         result = self.save(file)
-        return result
+        return unicode(result)
 
     def process_result_value(self, value, dialect):
         """Return the fully qualified url for this `File`.
