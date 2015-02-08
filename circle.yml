@@ -6,6 +6,7 @@ general:
   branches:
     only:
       - master # list of branches to build
+      - release/0.1.*
 
 dependencies:
   override:
@@ -17,9 +18,9 @@ test:
 
 deployment:
   pypi:
-    branch: master
+    branch: [master, release/0.1.*]
     commands:
       - sudo chown -R ubuntu:ubuntu flask_servatus.egg-info
       - sed "s/PYPI_USERNAME/$PYPI_USERNAME/;s/PYPI_PASSWORD/$PYPI_PASSWORD/" < pypirc.template > ~/.pypirc
       - python setup.py sdist upload -r pypi
-      - curl -X POST http://readthedocs.org/build/flask-arrested
+      - curl -X POST http://readthedocs.org/build/flask-servatus
