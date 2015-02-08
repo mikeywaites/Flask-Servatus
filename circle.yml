@@ -6,7 +6,7 @@ general:
   branches:
     only:
       - master # list of branches to build
-      - release/0.1.*
+      - release/0.1.0
 
 dependencies:
   override:
@@ -18,7 +18,7 @@ test:
 
 deployment:
   pypi:
-    branch: [master, release/0.1.*]
+    branch: [master, release/0.1.0]
     commands:
       - sudo chown -R ubuntu:ubuntu flask_servatus.egg-info
       - sed "s/PYPI_USERNAME/$PYPI_USERNAME/;s/PYPI_PASSWORD/$PYPI_PASSWORD/" < pypirc.template > ~/.pypirc
