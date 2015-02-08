@@ -85,7 +85,7 @@ setup(
     url='https://github.com/mikeywaites/Flask-Servatus',
     download_url='https://github.com/mikeywaites/Flask-Servatus/releases/tag/%s' % VERSION,
     description='A port of djangos storages framework for use with flask applications',
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
     packages=find_packages(
         exclude=["tests"]
     ),
