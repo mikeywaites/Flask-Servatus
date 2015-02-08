@@ -1,0 +1,25 @@
+machine:
+  services:
+    - docker
+
+general:
+  branches:
+    only:
+      - master # list of branches to build
+
+dependencies:
+  override:
+    - docker build -t mikeywaites/flask-servatus .
+
+test:
+  override:
+    - docker run -it -v $(pwd):/opt/code --rm mikeywaites/flask-servatus python setup.py test
+
+deployment:
+  pypi:
+    branch: master
+    commands:
+      - sudo chown -R ubuntu:ubuntu flask_servatus.egg-info
+      - sed "s/PYPI_USERNAME/$PYPI_USERNAME/;s/PYPI_PASSWORD/$PYPI_PASSWORD/" < pypirc.template > ~/.pypirc
+      - python setup.py sdist upload -r pypi
+      - curl -X POST http://readthedocs.org/build/flask-arrested
