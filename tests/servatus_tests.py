@@ -52,4 +52,3 @@ class ServatusClassTests(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             servatus.init_app(app)
-

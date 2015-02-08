@@ -12,9 +12,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import StatementError
 from sqlalchemy import Column, Integer
 
-from .. import Servatus
-from ..fields import File
-from ..files import ContentFile
+from flask_servatus import Servatus
+from flask_servatus.fields import File
+from flask_servatus.files import ContentFile
 import shutil
 
 
@@ -125,4 +125,3 @@ class FieldTypeTests(unittest.TestCase):
         self.assertIsNone(model.image)
 
         # TODO: should delete the existing file but it does not atm
-
