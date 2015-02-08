@@ -14,7 +14,7 @@ dependencies:
 
 test:
   override:
-    - docker run -it -v $(pwd):/opt/code --rm mikeywaites/flask-servatus python setup.py test
+    - docker run -it -v $(pwd):/opt/code mikeywaites/flask-servatus python setup.py test
 
 deployment:
   pypi:
