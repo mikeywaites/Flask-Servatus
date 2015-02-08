@@ -1,6 +1,6 @@
 .. _installation:
 
-Install Flask Servatus
+Install Flask-Servatus
 ======================
 
 .. include:: header.rst
@@ -12,7 +12,7 @@ Flask Servatus is available on PyPi and can be installed using a python package 
 
 .. sourcecode:: shell
 
-    $ pip install Flask Servatus
+    $ pip install Flask-Servatus
 
 
 or via easy install
@@ -20,7 +20,7 @@ or via easy install
 
 .. sourcecode:: shell
 
-    $ easy_install Flask Servatus
+    $ easy_install Flask-Servatus
 
 
 Install Flask-Servatus from source
