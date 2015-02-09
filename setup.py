@@ -73,7 +73,8 @@ def read(name):
     return open(name).read()
 
 
-VERSION = '0.1.2'
+with open('VERSION') as fh:
+    VERSION = fh.read().strip()
 
 
 setup(
