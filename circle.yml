@@ -22,6 +22,7 @@ deployment:
     branch: [master, release/0.1.0]
     commands:
       - sudo chown -R ubuntu:ubuntu flask_servatus.egg-info
+      - sudo chown -R ubuntu:ubuntu dist
       - sed "s/PYPI_USERNAME/$PYPI_USERNAME/;s/PYPI_PASSWORD/$PYPI_PASSWORD/" < pypirc.template > ~/.pypirc
       - python setup.py sdist upload -r pypi
       - curl -X POST http://readthedocs.org/build/flask-servatus
