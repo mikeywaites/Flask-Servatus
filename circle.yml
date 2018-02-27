@@ -11,11 +11,14 @@ general:
 dependencies:
   override:
     - docker build -t mikeywaites/flask-servatus .
+    - docker build -f Dockerfile.py3 -t mikeywaites/flask-servatus:py3 .
 
 test:
   override:
     - docker run -it -v $(pwd):/opt/code mikeywaites/flask-servatus python setup.py test
     - docker run -it -v $(pwd):/opt/code mikeywaites/flask-servatus python setup.py install
+    - docker run -it -v $(pwd):/opt/code mikeywaites/flask-servatus:py3 python setup.py test
+    - docker run -it -v $(pwd):/opt/code mikeywaites/flask-servatus:py3 python setup.py install
 
 deployment:
   pypi:
