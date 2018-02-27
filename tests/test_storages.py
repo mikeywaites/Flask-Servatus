@@ -6,7 +6,7 @@ import unittest
 import shutil
 import tempfile
 
-from cStringIO import StringIO
+from six import StringIO
 
 from flask import Flask
 

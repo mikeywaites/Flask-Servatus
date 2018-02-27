@@ -46,8 +46,8 @@ import errno
 import os
 import itertools
 
-from urlparse import urljoin
-from urllib import quote
+from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import quote
 from io import UnsupportedOperation
 
 from flask import current_app, safe_join
@@ -82,7 +82,7 @@ def chunked_iterator(content, chunk_size=None):
 def filepath_to_uri(path):
     if path is None:
         return path
-    return quote(path.replace(b"\\", b"/"), safe=b"/~!*()'")
+    return quote(path.replace("\\", "/"), safe="/~!*()'")
 
 
 class Storage(object):
