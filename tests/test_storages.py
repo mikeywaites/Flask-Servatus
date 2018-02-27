@@ -14,6 +14,11 @@ from flask_servatus import Servatus
 from flask_servatus.storages import FileSystemStorage
 from flask_servatus.exceptions import SuspiciousFileOperation
 
+# There's no tests for this module ATM but we're importing it to make
+# sure it's importable across py2/py3
+from flask_servatus.storages.amazon_s3 import *  # NOQA
+from flask_servatus.storages import s3storage  # NOQA
+
 servatus = Servatus()
 
 
