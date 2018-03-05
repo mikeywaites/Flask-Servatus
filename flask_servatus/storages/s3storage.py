@@ -28,6 +28,7 @@ class S3Storage(Storage):
             preload_metadata=None):
 
         self.bucket = bucket or current_app.config['AWS_STORAGE_BUCKET_NAME']
+        self.BUCKET_PREFIX = current_app.config.get('AWS_BUCKET_PREFIX', '')
         self.acl = acl or current_app.config.get('AWS_DEFAULT_ACL', 'public-read')
         self.encrypt = encrypt
         if gzip is not None:
@@ -108,8 +109,10 @@ class S3Storage(Storage):
     @property
     def entries(self):
         if self.preload_metadata and not self._entries:
-            self._entries = dict((entry.key, entry)
-                                for entry in self.connection.list_bucket(self.bucket).entries)
+            self._entries = dict(
+                (entry.key, entry)
+                for entry in self.connection.list_bucket(self.bucket).entries
+            )
         return self._entries
 
     def _get_connection(self):
@@ -117,7 +120,7 @@ class S3Storage(Storage):
 
     def _clean_name(self, name):
         # Useful for windows' paths
-        return os.path.join(BUCKET_PREFIX, os.path.normpath(name).replace('\\', '/'))
+        return os.path.join(self.BUCKET_PREFIX, os.path.normpath(name).replace('\\', '/'))
 
     def _compress_string(self, s):
         """Gzip a given string."""
