@@ -85,8 +85,12 @@ def canonical_string(method, bucket="", key="", query_args={}, headers={}, expir
 # access key, optionally urlencoding the result
 def encode(aws_secret_access_key, str, urlencode=False):
     b64_hmac = base64.encodestring(
-        hmac.new(aws_secret_access_key, str, sha).digest()
-    ).strip()
+        hmac.new(
+            aws_secret_access_key.encode('utf-8'),
+            str.encode('utf-8'),
+            sha
+        ).digest()
+    ).decode('utf-8').strip()
     if urlencode:
         return urllib.parse.quote_plus(b64_hmac)
     else:

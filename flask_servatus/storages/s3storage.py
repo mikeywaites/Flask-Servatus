@@ -197,7 +197,9 @@ class S3Storage(Storage):
         name = self._clean_name(name)
         content.open()
         if hasattr(content, 'chunks'):
-            content_str = ''.join(chunk for chunk in content.chunks())
+            content_str = b''
+            for chunk in content.chunks():
+                content_str += chunk
         else:
             content_str = content.read()
         self._put_file(name, content_str)
