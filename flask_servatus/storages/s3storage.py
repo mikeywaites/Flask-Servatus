@@ -78,6 +78,7 @@ class S3Storage(Storage):
             calling_format=calling_format,
             is_secure=self.secure_urls
         )
+        self.querystring_active = current_app.config.get('AWS_QUERYSTRING_ACTIVE', False)
         self.querystring_expire = current_app.config.get('AWS_QUERYSTRING_EXPIRE', 60)
 
         self.generator.set_expires_in(self.querystring_expire)
@@ -228,7 +229,7 @@ class S3Storage(Storage):
 
     def url(self, name):
         name = self._clean_name(name)
-        if QUERYSTRING_ACTIVE:
+        if self.querystring_active:
             return self.generator.generate_url('GET', self.bucket, name)
         else:
             return self.generator.make_bare_url(self.bucket, name)
@@ -261,6 +262,7 @@ class S3Storage(Storage):
 
 class PreloadingS3Storage(S3Storage):
     pass
+
 
 class S3StorageFile(ServatusFile):
     def __init__(self, name, storage, mode):
