@@ -6,13 +6,18 @@ import unittest
 import shutil
 import tempfile
 
-from cStringIO import StringIO
+from six import StringIO
 
 from flask import Flask
 
-from .. import Servatus
-from ..storages import FileSystemStorage
-from ..exceptions import SuspiciousFileOperation
+from flask_servatus import Servatus
+from flask_servatus.storages import FileSystemStorage
+from flask_servatus.exceptions import SuspiciousFileOperation
+
+# There's no tests for this module ATM but we're importing it to make
+# sure it's importable across py2/py3
+from flask_servatus.storages.amazon_s3 import *  # NOQA
+from flask_servatus.storages import s3storage  # NOQA
 
 servatus = Servatus()
 
@@ -51,6 +56,29 @@ class FileSystemStorageTests(unittest.TestCase):
 
         self.storage.save('test.file', StringIO('This is a file'))
         self.assertTrue(self.storage.exists('test.file'))
+
+    def test_get_available_name(self):
+
+        self.storage.save('foo/bar/test2.file', StringIO('This is a file'))
+
+        res1 = self.storage.get_available_name('foo.file')
+        res2 = self.storage.get_available_name('foo/bar/foo.file')
+        res3 = self.storage.get_available_name('foo/bar/test2.file')
+
+        self.assertEqual(res1, 'foo.file')
+        self.assertEqual(res2, 'foo/bar/foo.file')
+        self.assertEqual(res3, 'foo/bar/test2_1.file')
+
+        with self.assertRaises(SuspiciousFileOperation):
+            self.storage.get_available_name('/foo/bar/foo.file')
+
+        with self.assertRaises(SuspiciousFileOperation):
+            self.storage.get_available_name('foo/bar/../../../foo.file')
+
+    def test_file_exists_with_directory(self):
+
+        self.storage.save('foo/bar/test.file', StringIO('This is a file'))
+        self.assertTrue(self.storage.exists('foo/bar/test.file'))
 
     def test_file_path(self):
 

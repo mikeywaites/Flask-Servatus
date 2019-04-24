@@ -11,6 +11,8 @@
 
 """
 
+import six
+
 from sqlalchemy import types
 
 from flask_servatus import get_default_storage
@@ -115,7 +117,7 @@ class File(types.TypeDecorator):
     def process_bind_param(self, file, dialect):
         result = self.save(file)
         if result:
-            return unicode(result)
+            return six.u(result)
 
     def process_result_value(self, value, dialect):
         """Return the fully qualified url for this `File`.

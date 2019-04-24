@@ -46,8 +46,8 @@ import errno
 import os
 import itertools
 
-from urlparse import urljoin
-from urllib import quote
+from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import quote
 from io import UnsupportedOperation
 
 from flask import current_app, safe_join
@@ -82,7 +82,7 @@ def chunked_iterator(content, chunk_size=None):
 def filepath_to_uri(path):
     if path is None:
         return path
-    return quote(path.replace(b"\\", b"/"), safe=b"/~!*()'")
+    return quote(path.replace("\\", "/"), safe="/~!*()'")
 
 
 class Storage(object):
@@ -100,14 +100,23 @@ class Storage(object):
         should be any python file-like object ready to be read from
         the beginning.
 
+        The provided ``name`` for the file will be sanitised using
+        :func:``get_available_name`` to ensure its valid and available on the
+        file system.
+
         :param str name: name of the file being saved
         :param content: file-like object
 
+        :raises: SuspiciousFileOperation
         :returns: the name of the saved file
-        """
+        :rtype: str
 
+        .. seealso::
+            :func: .get_available_name
+
+        """
         name = self.get_available_name(name)
-        name = self._save(name, content)
+        return self._save(name, content)
 
         return name
 
@@ -115,21 +124,31 @@ class Storage(object):
         """Returns a filename that's free on the target storage system, and
         available for new content to be written to.
 
-        :param name: name of file being saved
+        Useage:
+            >>>storage = Storage()
+            >>>storage.get_available_name('foo/bar/file.txt')
+            >>>'foo/bar/file.txt'
+
+        :param str name: name of file being saved
+
+        :raises: SuspiciousFileOperation
+        :retuns: Full path to available version of file name
+        :rtype: str
         """
         name = str(name)
-        dir_name, file_name = os.path.split(secure_filename(name))
+        dir_name, file_name = os.path.split(name)
+        file_name = secure_filename(file_name)
+
         file_root, file_ext = os.path.splitext(file_name)
-        # If the filename already exists, add an underscore and a number (before
-        # the file extension, if one exists) to the filename until the generated
-        # filename doesn't exist.
+
         count = itertools.count(1)
-        while self.exists(name):
-            # file_ext includes the dot.
-            name = os.path.join(dir_name, "%s_%s%s" % (file_root,
-                                                       next(count),
-                                                       file_ext))
-        return name
+        tmpl = '{root}_{version}{ext}'
+        full_path = safe_join(dir_name, file_name)
+        while self.exists(full_path):
+            full_path = safe_join(dir_name, tmpl.format(root=file_root,
+                                                        version=next(count),
+                                                        ext=file_ext))
+        return full_path
 
 
 class FileSystemStorage(Storage):

@@ -68,7 +68,7 @@ class FileProxyMixin(object):
     truncate = property(lambda self: self.file.truncate)
     write = property(lambda self: self.file.write)
     writelines = property(lambda self: self.file.writelines)
-    xreadlines = property(lambda self: self.file.xreadlines)
+    xreadlines = property(lambda self: self.file.__iter__)
 
     def __iter__(self):
         return iter(self.file)
@@ -202,26 +202,3 @@ class ServatusFile(FileProxyMixin):
 class ContentFile(FileStorage):
     def __init__(self, content, name):
         return super(ContentFile, self).__init__(BytesIO(content), filename=name)
-
-# class ContentFile(ServatusFile):
-#     """
-#     A File-like object that takes just raw content, rather than an actual file.
-#     """
-#     def __init__(self, content, name=None):
-#         super(ContentFile, self).__init__(BytesIO(content), name=name)
-#         self.size = len(content)
-
-#     def __str__(self):
-#         return 'Raw content'
-
-#     def __bool__(self):
-#         return True
-
-#     def __nonzero__(self):
-#         return type(self).__bool__(self)
-
-#     def open(self, mode=None):
-#         self.seek(0)
-
-#     def close(self):
-#         pass

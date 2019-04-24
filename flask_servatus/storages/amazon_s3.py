@@ -11,20 +11,21 @@
 
 import base64
 import hmac
-import httplib
 try:
     from hashlib import sha1 as sha
 except ImportError:
     import sha
 import time
-import urllib
-import urlparse
 import xml.sax
+
+from six.moves import urllib
+from six.moves import http_client
 
 DEFAULT_HOST = 's3.amazonaws.com'
 PORTS_BY_SECURITY = { True: 443, False: 80 }
 METADATA_PREFIX = 'x-amz-meta-'
 AMAZON_HEADER_PREFIX = 'x-amz-'
+
 
 # generates the aws canonical string for the given parameters
 def canonical_string(method, bucket="", key="", query_args={}, headers={}, expires=None):
@@ -35,13 +36,13 @@ def canonical_string(method, bucket="", key="", query_args={}, headers={}, expir
             interesting_headers[lk] = headers[header_key].strip()
 
     # these keys get empty strings if they don't exist
-    if not interesting_headers.has_key('content-type'):
+    if 'content-type' not in interesting_headers:
         interesting_headers['content-type'] = ''
-    if not interesting_headers.has_key('content-md5'):
+    if 'content-md5' not in interesting_headers:
         interesting_headers['content-md5'] = ''
 
     # just in case someone used this.  it's not necessary in this lib.
-    if interesting_headers.has_key('x-amz-date'):
+    if 'x-amz-date' in interesting_headers:
         interesting_headers['date'] = ''
 
     # if you're using expires for query string auth, then it trumps date
@@ -49,7 +50,7 @@ def canonical_string(method, bucket="", key="", query_args={}, headers={}, expir
     if expires:
         interesting_headers['date'] = str(expires)
 
-    sorted_header_keys = interesting_headers.keys()
+    sorted_header_keys = list(interesting_headers.keys())
     sorted_header_keys.sort()
 
     buf = "%s\n" % method
@@ -64,45 +65,53 @@ def canonical_string(method, bucket="", key="", query_args={}, headers={}, expir
         buf += "/%s" % bucket
 
     # add the key.  even if it doesn't exist, add the slash
-    buf += "/%s" % urllib.quote_plus(key)
+    buf += "/%s" % urllib.parse.quote_plus(key)
 
     # handle special query string arguments
 
-    if query_args.has_key("acl"):
+    if "acl" in query_args:
         buf += "?acl"
-    elif query_args.has_key("torrent"):
+    elif "torrent" in query_args:
         buf += "?torrent"
-    elif query_args.has_key("logging"):
+    elif "logging" in query_args:
         buf += "?logging"
-    elif query_args.has_key("location"):
+    elif "location" in query_args:
         buf += "?location"
 
     return buf
 
+
 # computes the base64'ed hmac-sha hash of the canonical string and the secret
 # access key, optionally urlencoding the result
 def encode(aws_secret_access_key, str, urlencode=False):
-    b64_hmac = base64.encodestring(hmac.new(aws_secret_access_key, str, sha).digest()).strip()
+    b64_hmac = base64.encodestring(
+        hmac.new(
+            aws_secret_access_key.encode('utf-8'),
+            str.encode('utf-8'),
+            sha
+        ).digest()
+    ).decode('utf-8').strip()
     if urlencode:
-        return urllib.quote_plus(b64_hmac)
+        return urllib.parse.quote_plus(b64_hmac)
     else:
         return b64_hmac
 
+
 def merge_meta(headers, metadata):
     final_headers = headers.copy()
-    for k in metadata.keys():
+    for k in list(metadata.keys()):
         final_headers[METADATA_PREFIX + k] = metadata[k]
 
     return final_headers
 
+
 # builds the query arg string
 def query_args_hash_to_string(query_args):
-    query_string = ""
     pairs = []
-    for k, v in query_args.items():
+    for k, v in list(query_args.items()):
         piece = k
-        if v != None:
-            piece += "=%s" % urllib.quote_plus(str(v))
+        if v is not None:
+            piece += "=%s" % urllib.parse.quote_plus(str(v))
         pairs.append(piece)
 
     return '&'.join(pairs)
@@ -252,7 +261,7 @@ class AWSAuthConnection:
 
         # add the slash after the bucket regardless
         # the key will be appended if it is non-empty
-        path += "/%s" % urllib.quote_plus(key)
+        path += "/%s" % urllib.parse.quote_plus(key)
 
 
         # build the path_argument string
@@ -265,9 +274,9 @@ class AWSAuthConnection:
         host = "%s:%d" % (server, self.port)
         while True:
             if (is_secure):
-                connection = httplib.HTTPSConnection(host)
+                connection = http_client.HTTPSConnection(host)
             else:
-                connection = httplib.HTTPConnection(host)
+                connection = http_client.HTTPConnection(host)
 
             final_headers = merge_meta(headers, metadata);
             # add auth header
@@ -284,7 +293,7 @@ class AWSAuthConnection:
             # (close connection)
             resp.read()
             scheme, host, path, params, query, fragment \
-                    = urlparse.urlparse(location)
+                    = urllib.parse.urlparse(location)
             if scheme == "http":    is_secure = True
             elif scheme == "https": is_secure = False
             else: raise IOError("Not http/https: " + location)
@@ -292,7 +301,7 @@ class AWSAuthConnection:
             # retry with redirect
 
     def _add_aws_auth_header(self, headers, method, bucket, key, query_args):
-        if not headers.has_key('Date'):
+        if 'Date' not in headers:
             headers['Date'] = time.strftime("%a, %d %b %Y %X GMT", time.gmtime())
 
         c_string = canonical_string(method, bucket, key, query_args, headers)
@@ -401,7 +410,7 @@ class QueryStringAuthGenerator:
 
         url = CallingFormat.build_url_base(self.protocol, self.server, self.port, bucket, self.calling_format)
 
-        url += "/%s" % urllib.quote_plus(key)
+        url += "/%s" % urllib.parse.quote_plus(key)
 
         query_args['Signature'] = encoded_canonical
         query_args['Expires'] = expires
@@ -490,7 +499,7 @@ class GetResponse(Response):
 
     def get_aws_metadata(self, headers):
         metadata = {}
-        for hkey in headers.keys():
+        for hkey in list(headers.keys()):
             if hkey.lower().startswith(METADATA_PREFIX):
                 metadata[hkey[len(METADATA_PREFIX):]] = headers[hkey]
                 del headers[hkey]

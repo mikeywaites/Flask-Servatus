@@ -1,81 +1,105 @@
 import os
 import mimetypes
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from six import StringIO
+from gzip import GzipFile
+from flask import current_app
 
 from flask_servatus.files import ServatusFile
 from flask_servatus.storages import Storage
+from flask_servatus.storages.amazon_s3 import (
+    AWSAuthConnection, QueryStringAuthGenerator, CallingFormat
+)
 
-from flask_servatus.storages.amazon_s3 import AWSAuthConnection, QueryStringAuthGenerator, CallingFormat
-
-from flask import current_app
-
-ACCESS_KEY_NAME     = current_app.config.get('AWS_S3_ACCESS_KEY_ID', current_app.config.get('AWS_ACCESS_KEY_ID', None))
-SECRET_KEY_NAME     = current_app.config.get('AWS_S3_SECRET_ACCESS_KEY', current_app.config.get('AWS_SECRET_ACCESS_KEY', None))
-HEADERS             = current_app.config.get('AWS_HEADERS', {})
-DEFAULT_ACL         = current_app.config.get('AWS_DEFAULT_ACL', 'public-read')
-QUERYSTRING_ACTIVE  = current_app.config.get('AWS_QUERYSTRING_ACTIVE', False)
-QUERYSTRING_EXPIRE  = current_app.config.get('AWS_QUERYSTRING_EXPIRE', 60)
-SECURE_URLS         = current_app.config.get('AWS_S3_SECURE_URLS', False)
-BUCKET_PREFIX       = current_app.config.get('AWS_BUCKET_PREFIX', '')
-CALLING_FORMAT      = current_app.config.get('AWS_CALLING_FORMAT', CallingFormat.PATH)
-PRELOAD_METADATA    = current_app.config.get('AWS_PRELOAD_METADATA', False)
-
-IS_GZIPPED          = current_app.config.get('AWS_IS_GZIPPED', False)
-GZIP_CONTENT_TYPES  = current_app.config.get('GZIP_CONTENT_TYPES', (
-    'text/css',
-    'application/javascript',
-    'application/x-javascript'
-))
-
-if IS_GZIPPED:
-    from gzip import GzipFile
 
 class S3Storage(Storage):
     """Amazon Simple Storage Service"""
 
-    def __init__(self, bucket=current_app.config['AWS_STORAGE_BUCKET_NAME'],
-            access_key=None, secret_key=None, acl=DEFAULT_ACL,
-            calling_format=CALLING_FORMAT, encrypt=False,
-            gzip=IS_GZIPPED, gzip_content_types=GZIP_CONTENT_TYPES,
-            preload_metadata=PRELOAD_METADATA):
-        self.bucket = bucket
-        self.acl = acl
+    def __init__(
+            self,
+            bucket=None,
+            access_key=None,
+            secret_key=None,
+            acl=None,
+            calling_format=None,
+            encrypt=False,
+            gzip=None,
+            gzip_content_types=None,
+            preload_metadata=None):
+
+        self.bucket = bucket or current_app.config['AWS_STORAGE_BUCKET_NAME']
+        self.BUCKET_PREFIX = current_app.config.get('AWS_BUCKET_PREFIX', '')
+        self.acl = acl or current_app.config.get('AWS_DEFAULT_ACL', 'public-read')
         self.encrypt = encrypt
-        self.gzip = gzip
-        self.gzip_content_types = gzip_content_types
+        if gzip is not None:
+            self.gzip = gzip
+        else:
+            self.gzip = current_app.config.get('AWS_IS_GZIPPED', False)
+        self.gzip_content_types  = gzip_content_types or current_app.config.get(
+            'GZIP_CONTENT_TYPES', (
+                'text/css',
+                'application/javascript',
+                'application/x-javascript'
+            )
+        )
         self.preload_metadata = preload_metadata
+        if preload_metadata is not None:
+            self.preload_metadata = self.preload_metadata
+        else:
+            self.preload_metadata = current_app.config.get('AWS_PRELOAD_METADATA', False)
+
+        calling_format = calling_format or current_app.config.get(
+            'AWS_CALLING_FORMAT',
+            CallingFormat.PATH
+        )
 
         if encrypt:
             try:
                 import ezPyCrypto
             except ImportError:
-                raise AttributeError("Could not load ezPyCrypto.\nSee "
-                    "http://www.freenet.org.nz/ezPyCrypto/ to install it.")
+                raise AttributeError(
+                    "Could not load ezPyCrypto.\nSee "
+                    "http://www.freenet.org.nz/ezPyCrypto/ to install it."
+                )
             self.crypto_key = ezPyCrypto.key
 
         if not access_key and not secret_key:
             access_key, secret_key = self._get_access_keys()
 
-        self.connection = AWSAuthConnection(access_key, secret_key,
-                            calling_format=calling_format)
-        self.generator = QueryStringAuthGenerator(access_key, secret_key,
-                            calling_format=calling_format,
-                            is_secure=SECURE_URLS)
-        self.generator.set_expires_in(QUERYSTRING_EXPIRE)
+        self.connection = AWSAuthConnection(
+            access_key, secret_key,
+            calling_format=calling_format
+        )
 
-        self.headers = HEADERS
+        self.secure_urls = current_app.config.get('AWS_S3_SECURE_URLS', False)
+        self.generator = QueryStringAuthGenerator(
+            access_key,
+            secret_key,
+            calling_format=calling_format,
+            is_secure=self.secure_urls
+        )
+        self.querystring_active = current_app.config.get('AWS_QUERYSTRING_ACTIVE', False)
+        self.querystring_expire = current_app.config.get('AWS_QUERYSTRING_EXPIRE', 60)
+
+        self.generator.set_expires_in(self.querystring_expire)
+
+        self.headers = current_app.config.get('AWS_HEADERS', {})
         self._entries = {}
 
     def _get_access_keys(self):
-        access_key = ACCESS_KEY_NAME
-        secret_key = SECRET_KEY_NAME
+        access_key = current_app.config.get(
+            'AWS_S3_ACCESS_KEY_ID',
+            current_app.config.get('AWS_ACCESS_KEY_ID', None)
+        )
+
+        secret_key = current_app.config.get(
+            'AWS_S3_SECRET_ACCESS_KEY',
+            current_app.config.get('AWS_SECRET_ACCESS_KEY', None)
+        )
+
         if (access_key or secret_key) and (not access_key or not secret_key):
-            access_key = os.environ.get(ACCESS_KEY_NAME)
-            secret_key = os.environ.get(SECRET_KEY_NAME)
+            access_key = os.environ.get(access_key)
+            secret_key = os.environ.get(secret_key)
 
         if access_key and secret_key:
             # Both were provided, so use them
@@ -86,8 +110,10 @@ class S3Storage(Storage):
     @property
     def entries(self):
         if self.preload_metadata and not self._entries:
-            self._entries = dict((entry.key, entry)
-                                for entry in self.connection.list_bucket(self.bucket).entries)
+            self._entries = dict(
+                (entry.key, entry)
+                for entry in self.connection.list_bucket(self.bucket).entries
+            )
         return self._entries
 
     def _get_connection(self):
@@ -95,7 +121,7 @@ class S3Storage(Storage):
 
     def _clean_name(self, name):
         # Useful for windows' paths
-        return os.path.join(BUCKET_PREFIX, os.path.normpath(name).replace('\\', '/'))
+        return os.path.join(self.BUCKET_PREFIX, os.path.normpath(name).replace('\\', '/'))
 
     def _compress_string(self, s):
         """Gzip a given string."""
@@ -171,7 +197,9 @@ class S3Storage(Storage):
         name = self._clean_name(name)
         content.open()
         if hasattr(content, 'chunks'):
-            content_str = ''.join(chunk for chunk in content.chunks())
+            content_str = b''
+            for chunk in content.chunks():
+                content_str += chunk
         else:
             content_str = content.read()
         self._put_file(name, content_str)
@@ -203,7 +231,7 @@ class S3Storage(Storage):
 
     def url(self, name):
         name = self._clean_name(name)
-        if QUERYSTRING_ACTIVE:
+        if self.querystring_active:
             return self.generator.generate_url('GET', self.bucket, name)
         else:
             return self.generator.make_bare_url(self.bucket, name)
@@ -236,6 +264,7 @@ class S3Storage(Storage):
 
 class PreloadingS3Storage(S3Storage):
     pass
+
 
 class S3StorageFile(ServatusFile):
     def __init__(self, name, storage, mode):
