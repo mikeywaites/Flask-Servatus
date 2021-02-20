@@ -28,6 +28,7 @@ def factory(db):
 
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config['SERVATUS_MEDIA_ROOT'] = MEDIA_DIR
     servatus.init_app(app)
     db.init_app(app)
@@ -84,7 +85,7 @@ class FieldTypeTests(unittest.TestCase):
 
         self.db.session.commit()
 
-        self.assertEquals(model.image.url, '/media/foo.txt')
+        self.assertEqual(model.image.url, '/media/foo.txt')
 
     def test_size_set(self):
         model = self.Model()
@@ -93,7 +94,7 @@ class FieldTypeTests(unittest.TestCase):
 
         self.db.session.commit()
 
-        self.assertEquals(model.image.size, 3)
+        self.assertEqual(model.image.size, 3)
 
     def test_model_with_existing_file_stored(self):
         model = self.Model()

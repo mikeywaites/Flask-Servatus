@@ -52,7 +52,7 @@ from io import UnsupportedOperation
 
 from flask import current_app, safe_join
 
-from werkzeug import secure_filename
+from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 
 from flask_servatus.exceptions import SuspiciousFileOperation

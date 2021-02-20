@@ -2,20 +2,10 @@ version: '3'
 
 services:
 
-  servatus_py2:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    container_name: servatus_py2
-    volumes:
-      - ./:/opt/code
-    stdin_open: true
-    tty: true
-
   servatus_py3:
     build:
       context: ./
-      dockerfile: Dockerfile.py3
+      dockerfile: Dockerfile
     container_name: servatus_py3
     volumes:
       - ./:/opt/code
