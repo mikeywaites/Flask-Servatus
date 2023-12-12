@@ -1,0 +1,5 @@
+pytest>=6.0.0
+pytest-cov>=2.11
+pytest_spec>=3.1.0
+SQLAlchemy>=1.2
+Flask-Sqlalchemy==2.4.4
